@@ -37,6 +37,8 @@ public class RaymarchCamera : MonoBehaviour
         }
     }
 
+    public Transform _directionnalLight;
+
     public float _maxDistance;
     public Vector4 _sphere1;
 
@@ -56,6 +58,7 @@ public class RaymarchCamera : MonoBehaviour
         }
 
         // We assign the entrant elements to our shader
+        _rayMarchMat.SetVector("_lightDirection", _directionnalLight ? _directionnalLight.forward : Vector3.down);
         _rayMarchMaterial.SetMatrix("_CamFrustum", CamFrustum(_camera));
         _rayMarchMaterial.SetMatrix("_CamToWorld", _camera.cameraToWorldMatrix);
         _rayMarchMaterial.SetFloat("_maxDistance", _maxDistance);
@@ -85,8 +88,6 @@ public class RaymarchCamera : MonoBehaviour
 
         GL.End();
         GL.PopMatrix();
-
-        Debug.Log("OK");
     }
 
     // Calcul de la matrice représentant le frustum
