@@ -19,6 +19,7 @@
             #include "UnityCG.cginc"
 
             sampler2D _MainTex;
+            uniform sampler2D _CameraDepthTexture;
             uniform float4x4 _CamFrustum, _CamToWorld;
             uniform float _maxDistance;
             uniform float4 _sphere1;
@@ -55,7 +56,7 @@
                 return normalize(normal);
             }
 
-            fixed4 raymarching(float3 rayOrigin, float3 rayDirection) {
+            fixed4 raymarching(float3 rayOrigin, float3 rayDirection, float depth) {
                 fixed4 result = fixed4(1, 1, 1, 1);
 
                 const int maxIteration = 200;
@@ -63,9 +64,9 @@
 
                 // We loop through the iterations
                 for (int i = 0; i < maxIteration; i++) {
-                    if (distanceTravelled > _maxDistance) {
+                    if (distanceTravelled > _maxDistance || distanceTravelled > depth) {
                         // Envrionment color
-                        result = fixed4(rayDirection, 1);
+                        result = fixed4(rayDirection, 0);
                         break;
                     }
 
@@ -76,7 +77,7 @@
                         // Shading
                         float3 normal = getNormal(position);
                         float light = dot(-_lightDirection, normal);
-                        result = fixed4(1, 1, 1, 1) * light;
+                        result = fixed4(fixed3(1, 1, 1)*light, 1);
                         break;
                     }
                     distanceTravelled += distance;
@@ -104,10 +105,14 @@
 
             fixed4 frag(v2f i) : SV_Target
             {
+                float depth = LinearEyeDepth(tex2D(_CameraDepthTexture, i.uv).r);
+                depth *= length(i.ray);
+                fixed3 col = tex2D(_MainTex, i.uv);
                 float3 rayDirection = normalize(i.ray.xyz);
                 float3 rayOrigin = _WorldSpaceCameraPos;
-                fixed4 result = raymarching(rayOrigin, rayDirection);
-                return result;
+                fixed4 result = raymarching(rayOrigin, rayDirection, depth);
+
+                return fixed4(col* (1.0 - result.w) + result.xyz*result.w, 1.0);
             }
             ENDCG
         }

@@ -65,6 +65,7 @@ public class RaymarchCamera : MonoBehaviour
         _rayMarchMat.SetVector("_sphere1", _sphere1);
 
         RenderTexture.active = dest; // We now draw the quad on which we will draw the output of the shader
+        _rayMarchMaterial.SetTexture("_MainTex", src);
         GL.PushMatrix();
         GL.LoadOrtho();
         _rayMarchMaterial.SetPass(0);
