@@ -40,7 +40,10 @@ public class RaymarchCamera : MonoBehaviour
     public Transform _directionnalLight;
 
     public float _maxDistance;
+    public Color _mainColor;
     public Vector4 _sphere1;
+    public Vector4 _box1;
+    public Vector3 _modInterval;
 
     /* RENDERING */
     /* link to the documentation : https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnRenderImage.html */
@@ -58,11 +61,14 @@ public class RaymarchCamera : MonoBehaviour
         }
 
         // We assign the entrant elements to our shader
-        _rayMarchMat.SetVector("_lightDirection", _directionnalLight ? _directionnalLight.forward : Vector3.down);
+        _rayMarchMaterial.SetVector("_lightDirection", _directionnalLight ? _directionnalLight.forward : Vector3.down);
         _rayMarchMaterial.SetMatrix("_CamFrustum", CamFrustum(_camera));
         _rayMarchMaterial.SetMatrix("_CamToWorld", _camera.cameraToWorldMatrix);
         _rayMarchMaterial.SetFloat("_maxDistance", _maxDistance);
-        _rayMarchMat.SetVector("_sphere1", _sphere1);
+        _rayMarchMaterial.SetVector("_sphere1", _sphere1);
+        _rayMarchMaterial.SetVector("_box1", _box1);
+        _rayMarchMaterial.SetVector("_modInterval", _modInterval);
+        _rayMarchMaterial.SetColor("_mainColor", _mainColor);
 
         RenderTexture.active = dest; // We now draw the quad on which we will draw the output of the shader
         _rayMarchMaterial.SetTexture("_MainTex", src);

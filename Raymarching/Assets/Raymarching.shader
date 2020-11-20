@@ -17,13 +17,17 @@
             #pragma target 3.0
 
             #include "UnityCG.cginc"
+            #include "DistanceFunctions.cginc"
 
             sampler2D _MainTex;
             uniform sampler2D _CameraDepthTexture;
             uniform float4x4 _CamFrustum, _CamToWorld;
             uniform float _maxDistance;
             uniform float4 _sphere1;
+            uniform float4 _box1;
+            uniform float3 _modInterval;
             uniform float3 _lightDirection;
+            uniform fixed4 _mainColor;
 
             struct appdata
             {
@@ -38,13 +42,14 @@
                 float3 ray : TEXCOORD1;
             };
 
-            float sdfSphere(float3 position, float radius) {
-                return length(position) - radius;
-            }
-
             float distanceField(float3 position) {
-                float sphere1 = sdfSphere(position - _sphere1.xyz, _sphere1.w);
-                return sphere1;
+                float ModX = pMod1(position.x, _modInterval.x);
+                float ModY = pMod1(position.y, _modInterval.y);
+                float ModZ = pMod1(position.z, _modInterval.z);
+
+                float sphere1 = sdSphere(position - _sphere1.xyz, _sphere1.w);
+                float box1 = sdBox(position - _box1.xyz, _box1.www);
+                return opS(sphere1, box1);
             }
 
             float3 getNormal(float3 position) {
@@ -59,7 +64,7 @@
             fixed4 raymarching(float3 rayOrigin, float3 rayDirection, float depth) {
                 fixed4 result = fixed4(1, 1, 1, 1);
 
-                const int maxIteration = 200;
+                const int maxIteration = 1000;
                 float distanceTravelled = 0; // distance travelled along the ray direction
 
                 // We loop through the iterations
@@ -77,7 +82,7 @@
                         // Shading
                         float3 normal = getNormal(position);
                         float light = dot(-_lightDirection, normal);
-                        result = fixed4(fixed3(1, 1, 1)*light, 1);
+                        result = fixed4(_mainColor.rgb * light, 1);
                         break;
                     }
                     distanceTravelled += distance;
