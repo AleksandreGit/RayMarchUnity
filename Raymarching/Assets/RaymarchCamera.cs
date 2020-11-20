@@ -27,6 +27,7 @@ public class RaymarchCamera : MonoBehaviour
 
     /* CAMERA */
     private Camera _cam;
+    public float _maxDistance;
 
     public Camera _camera {
         get {
@@ -37,13 +38,25 @@ public class RaymarchCamera : MonoBehaviour
         }
     }
 
+    [Header("Directionnal light")]
     public Transform _directionnalLight;
+    public Color _lightColor;
+    public float _lightIntensity;
 
-    public float _maxDistance;
+    [Header("Shading")]
+    public float _shadowIntensity;
+    public Vector2 _shadowDistance;
+
+
+    [Header("Signed Distance Field")]
     public Color _mainColor;
     public Vector4 _sphere1;
     public Vector4 _box1;
     public Vector3 _modInterval;
+    public float _box1Round;
+    public float _boxSphereSmooth;
+    public Vector4 _sphere2;
+    public float _sphereIntersectSmooth;
 
     /* RENDERING */
     /* link to the documentation : https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnRenderImage.html */
@@ -65,12 +78,22 @@ public class RaymarchCamera : MonoBehaviour
         _rayMarchMaterial.SetMatrix("_CamFrustum", CamFrustum(_camera));
         _rayMarchMaterial.SetMatrix("_CamToWorld", _camera.cameraToWorldMatrix);
         _rayMarchMaterial.SetFloat("_maxDistance", _maxDistance);
+        _rayMarchMaterial.SetFloat("_box1Round", _box1Round);
+        _rayMarchMaterial.SetFloat("_boxSphereSmooth", _boxSphereSmooth);
+        _rayMarchMaterial.SetFloat("_sphereIntersectSmooth", _sphereIntersectSmooth);
         _rayMarchMaterial.SetVector("_sphere1", _sphere1);
+        _rayMarchMaterial.SetVector("_sphere2", _sphere2);
         _rayMarchMaterial.SetVector("_box1", _box1);
         _rayMarchMaterial.SetVector("_modInterval", _modInterval);
         _rayMarchMaterial.SetColor("_mainColor", _mainColor);
+        _rayMarchMaterial.SetColor("_lightColor", _lightColor);
+        _rayMarchMaterial.SetFloat("_lightIntensity", _lightIntensity);
+        _rayMarchMaterial.SetFloat("_shadowIntensity", _shadowIntensity);
+        _rayMarchMaterial.SetVector("_shadowDistance", _shadowDistance);
 
-        RenderTexture.active = dest; // We now draw the quad on which we will draw the output of the shader
+
+
+    RenderTexture.active = dest; // We now draw the quad on which we will draw the output of the shader
         _rayMarchMaterial.SetTexture("_MainTex", src);
         GL.PushMatrix();
         GL.LoadOrtho();

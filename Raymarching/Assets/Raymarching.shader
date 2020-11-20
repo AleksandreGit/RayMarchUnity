@@ -22,12 +22,13 @@
             sampler2D _MainTex;
             uniform sampler2D _CameraDepthTexture;
             uniform float4x4 _CamFrustum, _CamToWorld;
-            uniform float _maxDistance;
-            uniform float4 _sphere1;
-            uniform float4 _box1;
-            uniform float3 _modInterval;
-            uniform float3 _lightDirection;
+            uniform float _maxDistance, _box1Round, _boxSphereSmooth, _sphereIntersectSmooth;
+            uniform float4 _sphere1, _sphere2, _box1;
+            uniform float3 _modInterval, _lightDirection,_lightColor;
+            uniform float  _lightIntensity, _shadowIntensity;
+            uniform float2 _shadowDist;
             uniform fixed4 _mainColor;
+
 
             struct appdata
             {
@@ -42,14 +43,26 @@
                 float3 ray : TEXCOORD1;
             };
 
-            float distanceField(float3 position) {
-                float ModX = pMod1(position.x, _modInterval.x);
-                float ModY = pMod1(position.y, _modInterval.y);
-                float ModZ = pMod1(position.z, _modInterval.z);
-
+            float BoxSphere(float3 position) 
+            {
                 float sphere1 = sdSphere(position - _sphere1.xyz, _sphere1.w);
-                float box1 = sdBox(position - _box1.xyz, _box1.www);
-                return opS(sphere1, box1);
+                float box1 = sdRoundBox(position - _box1.xyz, _box1.www, _box1Round);
+                float combine1 = opSS(sphere1, box1, _boxSphereSmooth);
+
+                float sphere2 = sdSphere(position - _sphere2.xyz, _sphere2.w);
+                float combine2 = opIS(sphere2, combine1, _sphereIntersectSmooth);
+
+                return combine2;
+            }
+
+            float distanceField(float3 position) {
+                /*float ModX = pMod1(position.x, _modInterval.x);
+                float ModY = pMod1(position.y, _modInterval.y);
+                float ModZ = pMod1(position.z, _modInterval.z);*/
+
+                float plane = sdPlane(position, float4(0, 1, 0, 0));
+                float boxSphere1 = BoxSphere(position);
+                return opU(plane, boxSphere1);
             }
 
             float3 getNormal(float3 position) {
@@ -59,6 +72,31 @@
                     distanceField(position + offset.yxy) - distanceField(position - offset.yxy),
                     distanceField(position + offset.yyx) - distanceField(position - offset.yyx));
                 return normalize(normal);
+            }
+
+            float hardShadow(float3 rayOrigin, float3 rayDirection, float minDistTravelled, float maxDistTravelled) {
+                for (float t = minDistTravelled; t < maxDistTravelled;) {
+                    float h = distanceField(rayOrigin + rayDirection * t);
+                    if (h < 0.001) {
+                        return 0.0;
+                    }
+                    t += h;
+                }
+
+                return 1.0;
+            }
+
+            float3 Shading(float3 position, float3 normal) {
+                // Directionnal light
+                float result = (_lightColor * dot(-_lightDirection, normal) * 0.5 + 0.5) * _lightIntensity;
+                
+                //Shadows
+                float shadow = hardShadow(position, -_lightDirection, _shadowDist.x, _shadowDist.y) *0.5 + 0.5;
+                shadow = max(0.0, pow(shadow, _shadowIntensity));
+
+                result *= shadow;
+
+                return result;
             }
 
             fixed4 raymarching(float3 rayOrigin, float3 rayDirection, float depth) {
@@ -81,8 +119,9 @@
                     if (distance < 0.01) { // We have hit something
                         // Shading
                         float3 normal = getNormal(position);
-                        float light = dot(-_lightDirection, normal);
-                        result = fixed4(_mainColor.rgb * light, 1);
+                        float shading = Shading(position, normal)
+                            ;
+                        result = fixed4(_mainColor.rgb * shading, 1);
                         break;
                     }
                     distanceTravelled += distance;
