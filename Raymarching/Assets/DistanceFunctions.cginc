@@ -31,9 +31,9 @@ float sdRoundBox(in float3 p, in float3 b, in float r)
 // BOOLEAN OPERATORS //
 
 // Union
-float opU(float d1, float d2)
+float4 opU(float4 d1, float4 d2)
 {
-	return min(d1, d2);
+    return (d1.w < d2.w) ? d1 : d2;
 }
 
 // Subtraction
@@ -58,10 +58,14 @@ float pMod1 (inout float p, float size)
 	return c;
 }
 
-float opUS(float d1, float d2, float k)
+float4 opUS(float4 d1, float4 d2, float k)
 {
-    float h = clamp(0.5 + 0.5 * (d2 - d1) / k, 0.0, 1.0);
-    return lerp(d2, d1, h) - k * h * (1.0 - h);
+    float h = clamp(0.5 + 0.5 * (d2.w - d1.w) / k, 0.0, 1.0);
+    float dist = lerp(d2.w, d1.w, h) - k * h * (1.0 - h);
+    float3 color = lerp(d2.rgb, d1.rgb, h);
+	
+    return float4(color, dist);
+	
 
 }
 

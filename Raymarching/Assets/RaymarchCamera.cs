@@ -87,6 +87,13 @@ public class RaymarchCamera : MonoBehaviour
     public float _envRefIntensity;
     public Cubemap _reflectionCube;
 
+    [Header("Color")]
+    public Color _groundColor;
+    public Gradient _sphereGradient;
+    private Color[] _sphereColor = new Color[8];
+    [Range(0, 4)]
+    public float _colorIntensity;
+
     /* RENDERING */
     /* link to the documentation : https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnRenderImage.html */
     /* Appelé après chaque rendu.
@@ -102,12 +109,20 @@ public class RaymarchCamera : MonoBehaviour
             return;
         }
 
+        for(int i=0; i<8; i++)
+        {
+            _sphereColor[i] = _sphereGradient.Evaluate((1f / 8) * i);
+        }
+
+        _rayMarchMaterial.SetColor("_groundColor", _groundColor);
+        _rayMarchMaterial.SetColorArray("_sphereColor", _sphereColor);
+        _rayMarchMaterial.SetFloat("_colorIntensity", _colorIntensity);
+
         // We assign the entrant elements to our shader
         _rayMarchMaterial.SetVector("_lightDirection", _directionnalLight ? _directionnalLight.forward : Vector3.down);
         _rayMarchMaterial.SetMatrix("_CamFrustum", CamFrustum(_camera));
         _rayMarchMaterial.SetMatrix("_CamToWorld", _camera.cameraToWorldMatrix);
         _rayMarchMaterial.SetFloat("_maxDistance", _maxDistance);
-        _rayMarchMaterial.SetColor("_mainColor", _mainColor);
         _rayMarchMaterial.SetColor("_lightColor", _lightColor);
         _rayMarchMaterial.SetFloat("_lightIntensity", _lightIntensity);
         _rayMarchMaterial.SetFloat("_shadowIntensity", _shadowIntensity);

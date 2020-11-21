@@ -27,7 +27,9 @@
             uniform int _maxIterations;
             uniform float _accuracy;
             // Color
-            uniform fixed4 _mainColor;
+            uniform fixed4 _groundColor;
+            uniform fixed4 _sphereColor[8];
+            uniform float _colorIntensity;
             // Light
             uniform float3 _lightDirection, _lightColor;
             uniform float  _lightIntensity;
@@ -79,31 +81,31 @@
                 return float3(cosY * v.x - sinY * v.z, v.y, sinY * v.x + cosY * v.z);
             }
 
-            float distanceField(float3 position) {
+            float4 distanceField(float3 position) {
                 /*float plane = sdPlane(position, float4(0, 1, 0, 0));
                 float boxSphere1 = BoxSphere(position);
                 return opU(plane, boxSphere1);*/
-                float plane = sdPlane(position, float4(0, 1, 0, 0));
-                float sphere = sdSphere(position - _sphere.xyz, _sphere.w);
+                float4 plane = float4(_groundColor.rgb , sdPlane(position, float4(0, 1, 0, 0)));
+                float4 sphere = float4(_sphereColor[0].rgb ,sdSphere(position - _sphere.xyz, _sphere.w));
                 for (int i = 1; i < 8; i++) {
-                    float sphereAdd = sdSphere(rotateY(position, _degreeRotate*i) - _sphere.xyz, _sphere.w);
+                    float4 sphereAdd = float4(_sphereColor[i].rgb, sdSphere(rotateY(position, _degreeRotate*i) - _sphere.xyz, _sphere.w));
                     sphere = opUS(sphere, sphereAdd, _sphereSmooth);
                 }
-                return opU(sphere, plane);
+                return opUS(sphere, plane, _sphereSmooth);
             }
 
             float3 getNormal(float3 position) {
                 const float2 offset = float2(0.001, 0.0);
                 float3 normal = float3(
-                    distanceField(position + offset.xyy) - distanceField(position - offset.xyy),
-                    distanceField(position + offset.yxy) - distanceField(position - offset.yxy),
-                    distanceField(position + offset.yyx) - distanceField(position - offset.yyx));
+                    distanceField(position + offset.xyy).w - distanceField(position - offset.xyy).w,
+                    distanceField(position + offset.yxy).w - distanceField(position - offset.yxy).w,
+                    distanceField(position + offset.yyx).w - distanceField(position - offset.yyx).w);
                 return normalize(normal);
             }
 
             float hardShadow(float3 rayOrigin, float3 rayDirection, float minDistTravelled, float maxDistTravelled) {
                 for (float t = minDistTravelled; t < maxDistTravelled;) {
-                    float h = distanceField(rayOrigin + rayDirection * t);
+                    float h = distanceField(rayOrigin + rayDirection * t).w;
                     if (h < 0.001) {
                         return 0.0;
                     }
@@ -117,7 +119,7 @@
                 float result = 1.0;
                 
                 for (float t = minDistTravelled; t < maxDistTravelled;) {
-                    float h = distanceField(rayOrigin + rayDirection * t);
+                    float h = distanceField(rayOrigin + rayDirection * t).w;
                     if (h < 0.001) {
                         return 0.0;
                     }
@@ -135,16 +137,16 @@
 
                 for (int i = 1; i <=_ambientOcclIterations; i++) {
                     dist = step * i;
-                    ambientOccl += max(0.0, (dist - distanceField(position + normal * dist)) / dist);    
+                    ambientOccl += max(0.0, (dist - distanceField(position + normal * dist).w) / dist);    
                 }
                 return (1.0 - ambientOccl * _ambientOcclIntensity);
 
             }
 
-            float3 Shading(float3 position, float3 normal) {
+            float3 Shading(float3 position, float3 normal, fixed3 color) {
                 float3 result;
                 // Diffuse color
-                float3 color = _mainColor.rgb;
+                color = color.rgb * _colorIntensity;
                 // Directionnal light
                 float3 light = (_lightColor * dot(-_lightDirection, normal) * 0.5 + 0.5) * _lightIntensity;
                 
@@ -159,7 +161,7 @@
                 return result;
             }
 
-            bool raymarching(float3 rayOrigin, float3 rayDirection, float depth, float maxDistance, float maxIterations, inout float3 position) {
+            bool raymarching(float3 rayOrigin, float3 rayDirection, float depth, float maxDistance, float maxIterations, inout float3 position, inout fixed3 dColor) {
                 bool hit;
 
                 float distanceTravelled = 0; // distance travelled along the ray direction
@@ -174,12 +176,13 @@
 
                     position = rayOrigin + rayDirection * distanceTravelled;
                     // Check for hit in distanceField
-                    float distance = distanceField(position); // si < 0 dans objet, sinon extérieur
-                    if (distance < _accuracy) { // We have hit something
+                    float4 distance = distanceField(position); // si < 0 dans objet, sinon extérieur
+                    if (distance.w < _accuracy) { // We have hit something
+                        dColor = distance.rgb;
                         hit = true;
                         break;
                     }
-                    distanceTravelled += distance;
+                    distanceTravelled += distance.w;
                 }
 
                 return hit;
@@ -211,33 +214,34 @@
                 float3 rayOrigin = _WorldSpaceCameraPos;
                 fixed4 result;
                 float3 hitPosition;
+                fixed3 dColor;
                 
-                bool hit = raymarching(rayOrigin, rayDirection, depth, _maxDistance, _maxIterations, hitPosition);
+                bool hit = raymarching(rayOrigin, rayDirection, depth, _maxDistance, _maxIterations, hitPosition, dColor);
 
                 if (hit) { // Hit
                     // Shading
                     float3 normal = getNormal(hitPosition);
-                    float3 shading = Shading(hitPosition, normal);
+                    float3 shading = Shading(hitPosition, normal, dColor);
                     result = fixed4(shading, 1);
                     result += fixed4(texCUBE(_reflectionCube, normal).rgb * _envRefIntensity * _reflectionIntensity, 0);
                     // Reflection
                     if (_reflectionCount > 0) {
                         rayDirection = normalize(reflect(rayDirection, normal));
                         rayOrigin = hitPosition + (rayDirection * 0.01);
-                        hit = raymarching(rayOrigin, rayDirection, _maxDistance, _maxDistance * 0.5f, _maxIterations / 2, hitPosition);
+                        hit = raymarching(rayOrigin, rayDirection, _maxDistance, _maxDistance * 0.5f, _maxIterations / 2, hitPosition, dColor);
                         if (hit) {
                             // Shading
                             float3 normal = getNormal(hitPosition);
-                            float3 shading = Shading(hitPosition, normal);
+                            float3 shading = Shading(hitPosition, normal, dColor);
                             result += fixed4(shading * _reflectionIntensity, 0);
                             if (_reflectionCount > 1) {
                                 rayDirection = normalize(reflect(rayDirection, normal));
                                 rayOrigin = hitPosition + (rayDirection * 0.01);
-                                hit = raymarching(rayOrigin, rayDirection, _maxDistance, _maxDistance * 0.25f, _maxIterations / 4, hitPosition);
+                                hit = raymarching(rayOrigin, rayDirection, _maxDistance, _maxDistance * 0.25f, _maxIterations / 4, hitPosition, dColor);
                                 if (hit) {
                                     // Shading
                                     float3 normal = getNormal(hitPosition);
-                                    float3 shading = Shading(hitPosition, normal);
+                                    float3 shading = Shading(hitPosition, normal, dColor);
                                     result += fixed4(shading * _reflectionIntensity * 0.5f, 0);
 
                                 }
