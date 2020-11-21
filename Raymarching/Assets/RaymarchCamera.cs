@@ -59,12 +59,16 @@ public class RaymarchCamera : MonoBehaviour
 
     [Header("Signed Distance Field")]
     public Color _mainColor;
+    public Vector4 _sphere;
+    public float _sphereSmooth;
+    public float _degreeRotate;
+    /*
     public Vector4 _sphere1;
     public Vector4 _box1;
     public float _box1Round;
     public float _boxSphereSmooth;
     public Vector4 _sphere2;
-    public float _sphereIntersectSmooth;
+    public float _sphereIntersectSmooth;*/
 
     [Header("Ambien occlusion")]
     [Range(0.01f, 10.0f)]
@@ -73,6 +77,15 @@ public class RaymarchCamera : MonoBehaviour
     public float _ambientOcclIntensity;
     [Range(1, 5)]
     public int _ambientOcclIterations;
+
+    [Header("Reflection")]
+    [Range(0, 2)]
+    public int _reflectionCount;
+    [Range(0, 1)]
+    public float _reflectionIntensity;
+    [Range(0, 1)]
+    public float _envRefIntensity;
+    public Cubemap _reflectionCube;
 
     /* RENDERING */
     /* link to the documentation : https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnRenderImage.html */
@@ -94,12 +107,6 @@ public class RaymarchCamera : MonoBehaviour
         _rayMarchMaterial.SetMatrix("_CamFrustum", CamFrustum(_camera));
         _rayMarchMaterial.SetMatrix("_CamToWorld", _camera.cameraToWorldMatrix);
         _rayMarchMaterial.SetFloat("_maxDistance", _maxDistance);
-        _rayMarchMaterial.SetFloat("_box1Round", _box1Round);
-        _rayMarchMaterial.SetFloat("_boxSphereSmooth", _boxSphereSmooth);
-        _rayMarchMaterial.SetFloat("_sphereIntersectSmooth", _sphereIntersectSmooth);
-        _rayMarchMaterial.SetVector("_sphere1", _sphere1);
-        _rayMarchMaterial.SetVector("_sphere2", _sphere2);
-        _rayMarchMaterial.SetVector("_box1", _box1);
         _rayMarchMaterial.SetColor("_mainColor", _mainColor);
         _rayMarchMaterial.SetColor("_lightColor", _lightColor);
         _rayMarchMaterial.SetFloat("_lightIntensity", _lightIntensity);
@@ -111,9 +118,15 @@ public class RaymarchCamera : MonoBehaviour
         _rayMarchMaterial.SetFloat("_ambientOcclStepSize", _ambientOcclStepSize);
         _rayMarchMaterial.SetFloat("_ambientOcclIntensity", _ambientOcclIntensity);
         _rayMarchMaterial.SetInt("_ambientOcclIterations", _ambientOcclIterations);
+        _rayMarchMaterial.SetVector("_sphere", _sphere);
+        _rayMarchMaterial.SetFloat("_sphereSmooth", _sphereSmooth);
+        _rayMarchMaterial.SetFloat("_degreeRotate", _degreeRotate);
 
-
-
+        // Reflection
+        _rayMarchMaterial.SetFloat("_reflectionIntensity", _reflectionIntensity);
+        _rayMarchMaterial.SetFloat("_envRefIntensity", _envRefIntensity);
+        _rayMarchMaterial.SetInt("_reflectionCount", _reflectionCount);
+        _rayMarchMaterial.SetTexture("_reflectionCube", _reflectionCube); 
 
     RenderTexture.active = dest; // We now draw the quad on which we will draw the output of the shader
         _rayMarchMaterial.SetTexture("_MainTex", src);

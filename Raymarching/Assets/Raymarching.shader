@@ -20,18 +20,32 @@
             #include "DistanceFunctions.cginc"
 
             sampler2D _MainTex;
+            // Setup
             uniform sampler2D _CameraDepthTexture;
             uniform float4x4 _CamFrustum, _CamToWorld;
-            uniform float _maxDistance, _box1Round, _boxSphereSmooth, _sphereIntersectSmooth;
-            uniform float4 _sphere1, _sphere2, _box1;
-            uniform float3 _lightDirection, _lightColor;
-            uniform float  _lightIntensity;
-            uniform float2 _shadowDist;
-            uniform fixed4 _mainColor;
-            uniform float _shadowIntensity, _shadowPenumbra;
+            uniform float _maxDistance;
             uniform int _maxIterations;
             uniform float _accuracy;
-
+            // Color
+            uniform fixed4 _mainColor;
+            // Light
+            uniform float3 _lightDirection, _lightColor;
+            uniform float  _lightIntensity;
+            // Shadow
+            uniform float2 _shadowDist;
+            uniform float _shadowIntensity, _shadowPenumbra;
+            // Reflection
+            uniform int _reflectionCount;
+            uniform float _reflectionIntensity;
+            uniform float _envRefIntensity;
+            uniform samplerCUBE _reflectionCube;
+            // Ambient Occlusion
+            uniform float _ambientOcclStepSize, _ambientOcclIntensity;
+            uniform int _ambientOcclIterations;
+            // SDF
+            uniform float4 _sphere;
+            uniform float _sphereSmooth;
+            uniform float _degreeRotate;
 
             struct appdata
             {
@@ -46,7 +60,7 @@
                 float3 ray : TEXCOORD1;
             };
 
-            float BoxSphere(float3 position) 
+            /*float BoxSphere(float3 position) 
             {
                 float sphere1 = sdSphere(position - _sphere1.xyz, _sphere1.w);
                 float box1 = sdRoundBox(position - _box1.xyz, _box1.www, _box1Round);
@@ -56,13 +70,26 @@
                 float combine2 = opIS(sphere2, combine1, _sphereIntersectSmooth);
 
                 return combine2;
+            }*/
+
+            float3 rotateY(float3 v, float degree) {
+                float rad = 0.01745322925 * degree;
+                float cosY = cos(rad);
+                float sinY = sin(rad);
+                return float3(cosY * v.x - sinY * v.z, v.y, sinY * v.x + cosY * v.z);
             }
 
             float distanceField(float3 position) {
-
-                float plane = sdPlane(position, float4(0, 1, 0, 0));
+                /*float plane = sdPlane(position, float4(0, 1, 0, 0));
                 float boxSphere1 = BoxSphere(position);
-                return opU(plane, boxSphere1);
+                return opU(plane, boxSphere1);*/
+                float plane = sdPlane(position, float4(0, 1, 0, 0));
+                float sphere = sdSphere(position - _sphere.xyz, _sphere.w);
+                for (int i = 1; i < 8; i++) {
+                    float sphereAdd = sdSphere(rotateY(position, _degreeRotate*i) - _sphere.xyz, _sphere.w);
+                    sphere = opUS(sphere, sphereAdd, _sphereSmooth);
+                }
+                return opU(sphere, plane);
             }
 
             float3 getNormal(float3 position) {
@@ -101,8 +128,6 @@
                 return result;
             }
 
-            uniform float _ambientOcclStepSize, _ambientOcclIntensity;
-            uniform int _ambientOcclIterations;
             float ambientOcclusion(float3 position, float3 normal) {
                 float step = _ambientOcclStepSize;
                 float ambientOccl = 0.0;
@@ -134,34 +159,30 @@
                 return result;
             }
 
-            fixed4 raymarching(float3 rayOrigin, float3 rayDirection, float depth) {
-                fixed4 result = fixed4(1, 1, 1, 1);
+            bool raymarching(float3 rayOrigin, float3 rayDirection, float depth, float maxDistance, float maxIterations, inout float3 position) {
+                bool hit;
 
-                const int maxIteration = _maxIterations;
                 float distanceTravelled = 0; // distance travelled along the ray direction
 
                 // We loop through the iterations
-                for (int i = 0; i < maxIteration; i++) {
-                    if (distanceTravelled > _maxDistance || distanceTravelled > depth) {
+                for (int i = 0; i < maxIterations; i++) {
+                    if (distanceTravelled > maxDistance || distanceTravelled > depth) {
                         // Envrionment color
-                        result = fixed4(rayDirection, 0);
+                        hit = false;
                         break;
                     }
 
-                    float3 position = rayOrigin + rayDirection * distanceTravelled;
+                    position = rayOrigin + rayDirection * distanceTravelled;
                     // Check for hit in distanceField
                     float distance = distanceField(position); // si < 0 dans objet, sinon extérieur
                     if (distance < _accuracy) { // We have hit something
-                        // Shading
-                        float3 normal = getNormal(position);
-                        float3 shading = Shading(position, normal);
-                        result = fixed4(shading, 1);
+                        hit = true;
                         break;
                     }
                     distanceTravelled += distance;
                 }
 
-                return result;
+                return hit;
             }
 
             v2f vert (appdata v)
@@ -188,7 +209,47 @@
                 fixed3 col = tex2D(_MainTex, i.uv);
                 float3 rayDirection = normalize(i.ray.xyz);
                 float3 rayOrigin = _WorldSpaceCameraPos;
-                fixed4 result = raymarching(rayOrigin, rayDirection, depth);
+                fixed4 result;
+                float3 hitPosition;
+                
+                bool hit = raymarching(rayOrigin, rayDirection, depth, _maxDistance, _maxIterations, hitPosition);
+
+                if (hit) { // Hit
+                    // Shading
+                    float3 normal = getNormal(hitPosition);
+                    float3 shading = Shading(hitPosition, normal);
+                    result = fixed4(shading, 1);
+                    result += fixed4(texCUBE(_reflectionCube, normal).rgb * _envRefIntensity * _reflectionIntensity, 0);
+                    // Reflection
+                    if (_reflectionCount > 0) {
+                        rayDirection = normalize(reflect(rayDirection, normal));
+                        rayOrigin = hitPosition + (rayDirection * 0.01);
+                        hit = raymarching(rayOrigin, rayDirection, _maxDistance, _maxDistance * 0.5f, _maxIterations / 2, hitPosition);
+                        if (hit) {
+                            // Shading
+                            float3 normal = getNormal(hitPosition);
+                            float3 shading = Shading(hitPosition, normal);
+                            result += fixed4(shading * _reflectionIntensity, 0);
+                            if (_reflectionCount > 1) {
+                                rayDirection = normalize(reflect(rayDirection, normal));
+                                rayOrigin = hitPosition + (rayDirection * 0.01);
+                                hit = raymarching(rayOrigin, rayDirection, _maxDistance, _maxDistance * 0.25f, _maxIterations / 4, hitPosition);
+                                if (hit) {
+                                    // Shading
+                                    float3 normal = getNormal(hitPosition);
+                                    float3 shading = Shading(hitPosition, normal);
+                                    result += fixed4(shading * _reflectionIntensity * 0.5f, 0);
+
+                                }
+
+                            }
+                        }
+                    }
+                }
+                else { // Miss
+                    result = fixed4(0, 0, 0, 0);
+                }
+
 
                 return fixed4(col* (1.0 - result.w) + result.xyz*result.w, 1.0);
             }

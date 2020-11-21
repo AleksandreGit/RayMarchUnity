@@ -320,12 +320,13 @@ MonoBehaviour:
   _shadowDist: {x: 0.1, y: 13.52}
   _shadowPenumbra: 20.1
   _mainColor: {r: 0.19277322, g: 0.5569176, b: 0.7169812, a: 0}
-  _sphere1: {x: 0, y: 2.5, z: 0, w: 2.9}
-  _box1: {x: 0, y: 2.35, z: 0, w: 2.6}
-  _box1Round: 0.1
-  _boxSphereSmooth: 1.337
-  _sphere2: {x: 0, y: 2.66, z: 0, w: 3.28}
-  _sphereIntersectSmooth: 0.05
+  _sphere: {x: 5.6, y: 0, z: 0, w: 2.2}
+  _sphereSmooth: 1.6
+  _degreeRotate: -42.3
   _ambientOcclStepSize: 0.25
   _ambientOcclIntensity: 0.195
   _ambientOcclIterations: 4
+  _reflectionCount: 0
+  _reflectionIntensity: 0
+  _envRefIntensity: 0
+  _reflectionCube: {fileID: 8900000, guid: 8a293ce833d584fc98516e0e74f495a4, type: 3}
