@@ -38,6 +38,12 @@ public class RaymarchCamera : MonoBehaviour
         }
     }
 
+    [Header("Setup")]
+    [Range(0, 500)]
+    public int _maxIterations;
+    [Range(0.1f, 0.001f)]
+    public float _accuracy;
+
     [Header("Directionnal light")]
     public Transform _directionnalLight;
     public Color _lightColor;
@@ -59,6 +65,14 @@ public class RaymarchCamera : MonoBehaviour
     public float _boxSphereSmooth;
     public Vector4 _sphere2;
     public float _sphereIntersectSmooth;
+
+    [Header("Ambien occlusion")]
+    [Range(0.01f, 10.0f)]
+    public float _ambientOcclStepSize;
+    [Range(0, 1)]
+    public float _ambientOcclIntensity;
+    [Range(1, 5)]
+    public int _ambientOcclIterations;
 
     /* RENDERING */
     /* link to the documentation : https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnRenderImage.html */
@@ -91,7 +105,13 @@ public class RaymarchCamera : MonoBehaviour
         _rayMarchMaterial.SetFloat("_lightIntensity", _lightIntensity);
         _rayMarchMaterial.SetFloat("_shadowIntensity", _shadowIntensity);
         _rayMarchMaterial.SetFloat("_shadowPenumbra", _shadowPenumbra);
+        _rayMarchMaterial.SetFloat("_accuracy", _accuracy);
+        _rayMarchMaterial.SetInt("_maxIterations", _maxIterations);
         _rayMarchMaterial.SetVector("_shadowDist", _shadowDist);
+        _rayMarchMaterial.SetFloat("_ambientOcclStepSize", _ambientOcclStepSize);
+        _rayMarchMaterial.SetFloat("_ambientOcclIntensity", _ambientOcclIntensity);
+        _rayMarchMaterial.SetInt("_ambientOcclIterations", _ambientOcclIterations);
+
 
 
 

@@ -29,6 +29,8 @@
             uniform float2 _shadowDist;
             uniform fixed4 _mainColor;
             uniform float _shadowIntensity, _shadowPenumbra;
+            uniform int _maxIterations;
+            uniform float _accuracy;
 
 
             struct appdata
@@ -99,15 +101,35 @@
                 return result;
             }
 
+            uniform float _ambientOcclStepSize, _ambientOcclIntensity;
+            uniform int _ambientOcclIterations;
+            float ambientOcclusion(float3 position, float3 normal) {
+                float step = _ambientOcclStepSize;
+                float ambientOccl = 0.0;
+                float dist;
+
+                for (int i = 1; i <=_ambientOcclIterations; i++) {
+                    dist = step * i;
+                    ambientOccl += max(0.0, (dist - distanceField(position + normal * dist)) / dist);    
+                }
+                return (1.0 - ambientOccl * _ambientOcclIntensity);
+
+            }
+
             float3 Shading(float3 position, float3 normal) {
+                float3 result;
+                // Diffuse color
+                float3 color = _mainColor.rgb;
                 // Directionnal light
-                float result = (_lightColor * dot(-_lightDirection, normal) * 0.5 + 0.5) * _lightIntensity;
+                float3 light = (_lightColor * dot(-_lightDirection, normal) * 0.5 + 0.5) * _lightIntensity;
                 
                 //Shadows
                 float shadow = softShadow(position, -_lightDirection, _shadowDist.x, _shadowDist.y, _shadowPenumbra) *0.5 + 0.5;
                 shadow = max(0.0, pow(shadow, _shadowIntensity));
 
-                result *= shadow;
+                // Ambient occlusio
+                float ambient = ambientOcclusion(position, normal);
+                result = color * light * shadow * ambient;
 
                 return result;
             }
@@ -115,7 +137,7 @@
             fixed4 raymarching(float3 rayOrigin, float3 rayDirection, float depth) {
                 fixed4 result = fixed4(1, 1, 1, 1);
 
-                const int maxIteration = 1000;
+                const int maxIteration = _maxIterations;
                 float distanceTravelled = 0; // distance travelled along the ray direction
 
                 // We loop through the iterations
@@ -129,11 +151,11 @@
                     float3 position = rayOrigin + rayDirection * distanceTravelled;
                     // Check for hit in distanceField
                     float distance = distanceField(position); // si < 0 dans objet, sinon extérieur
-                    if (distance < 0.01) { // We have hit something
+                    if (distance < _accuracy) { // We have hit something
                         // Shading
                         float3 normal = getNormal(position);
-                        float shading = Shading(position, normal);
-                        result = fixed4(_mainColor.rgb * shading, 1);
+                        float3 shading = Shading(position, normal);
+                        result = fixed4(shading, 1);
                         break;
                     }
                     distanceTravelled += distance;

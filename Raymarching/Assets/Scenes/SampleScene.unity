@@ -311,15 +311,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _shader: {fileID: 4800000, guid: d8c49d231a081034f8af5681376d785e, type: 3}
   _maxDistance: 100
+  _maxIterations: 500
+  _accuracy: 0.001
   _directionnalLight: {fileID: 705507995}
-  _lightColor: {r: 0.9773945, g: 1, b: 0.11792451, a: 0}
+  _lightColor: {r: 0.9607843, g: 0.92762876, b: 0, a: 0}
   _lightIntensity: 1
-  _shadowIntensity: 0.4
-  _shadowDist: {x: 0.1, y: 11.14}
-  _mainColor: {r: 0.9433962, g: 0.91947246, b: 0.43164828, a: 0}
+  _shadowIntensity: 1.25
+  _shadowDist: {x: 0.1, y: 13.52}
+  _shadowPenumbra: 20.1
+  _mainColor: {r: 0.19277322, g: 0.5569176, b: 0.7169812, a: 0}
   _sphere1: {x: 0, y: 2.5, z: 0, w: 2.9}
   _box1: {x: 0, y: 2.35, z: 0, w: 2.6}
   _box1Round: 0.1
   _boxSphereSmooth: 1.337
   _sphere2: {x: 0, y: 2.66, z: 0, w: 3.28}
   _sphereIntersectSmooth: 0.05
+  _ambientOcclStepSize: 0.25
+  _ambientOcclIntensity: 0.195
+  _ambientOcclIterations: 4
