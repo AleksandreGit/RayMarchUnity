@@ -44,8 +44,11 @@ public class RaymarchCamera : MonoBehaviour
     public float _lightIntensity;
 
     [Header("Shading")]
+    [Range(0, 4)]
     public float _shadowIntensity;
     public Vector2 _shadowDist;
+    [Range(1, 128)]
+    public float _shadowPenumbra;
 
 
     [Header("Signed Distance Field")]
@@ -87,6 +90,7 @@ public class RaymarchCamera : MonoBehaviour
         _rayMarchMaterial.SetColor("_lightColor", _lightColor);
         _rayMarchMaterial.SetFloat("_lightIntensity", _lightIntensity);
         _rayMarchMaterial.SetFloat("_shadowIntensity", _shadowIntensity);
+        _rayMarchMaterial.SetFloat("_shadowPenumbra", _shadowPenumbra);
         _rayMarchMaterial.SetVector("_shadowDist", _shadowDist);
 
 

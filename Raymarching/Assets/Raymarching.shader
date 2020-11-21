@@ -24,11 +24,11 @@
             uniform float4x4 _CamFrustum, _CamToWorld;
             uniform float _maxDistance, _box1Round, _boxSphereSmooth, _sphereIntersectSmooth;
             uniform float4 _sphere1, _sphere2, _box1;
-            uniform float3 _lightDirection,_lightColor;
+            uniform float3 _lightDirection, _lightColor;
             uniform float  _lightIntensity;
             uniform float2 _shadowDist;
             uniform fixed4 _mainColor;
-            uniform float _shadowIntensity;
+            uniform float _shadowIntensity, _shadowPenumbra;
 
 
             struct appdata
@@ -84,12 +84,27 @@
                 return 1.0;
             }
 
+            float softShadow(float3 rayOrigin, float3 rayDirection, float minDistTravelled, float maxDistTravelled, float k) {
+                float result = 1.0;
+                
+                for (float t = minDistTravelled; t < maxDistTravelled;) {
+                    float h = distanceField(rayOrigin + rayDirection * t);
+                    if (h < 0.001) {
+                        return 0.0;
+                    }
+                    result = min(result, k * h / t);
+                    t += h;
+                }
+
+                return result;
+            }
+
             float3 Shading(float3 position, float3 normal) {
                 // Directionnal light
                 float result = (_lightColor * dot(-_lightDirection, normal) * 0.5 + 0.5) * _lightIntensity;
                 
                 //Shadows
-                float shadow = hardShadow(position, -_lightDirection, _shadowDist.x, _shadowDist.y) *0.5 + 0.5;
+                float shadow = softShadow(position, -_lightDirection, _shadowDist.x, _shadowDist.y, _shadowPenumbra) *0.5 + 0.5;
                 shadow = max(0.0, pow(shadow, _shadowIntensity));
 
                 result *= shadow;
