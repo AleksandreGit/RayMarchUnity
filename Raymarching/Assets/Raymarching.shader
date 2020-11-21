@@ -24,10 +24,11 @@
             uniform float4x4 _CamFrustum, _CamToWorld;
             uniform float _maxDistance, _box1Round, _boxSphereSmooth, _sphereIntersectSmooth;
             uniform float4 _sphere1, _sphere2, _box1;
-            uniform float3 _modInterval, _lightDirection,_lightColor;
-            uniform float  _lightIntensity, _shadowIntensity;
+            uniform float3 _lightDirection,_lightColor;
+            uniform float  _lightIntensity;
             uniform float2 _shadowDist;
             uniform fixed4 _mainColor;
+            uniform float _shadowIntensity;
 
 
             struct appdata
@@ -56,9 +57,6 @@
             }
 
             float distanceField(float3 position) {
-                /*float ModX = pMod1(position.x, _modInterval.x);
-                float ModY = pMod1(position.y, _modInterval.y);
-                float ModZ = pMod1(position.z, _modInterval.z);*/
 
                 float plane = sdPlane(position, float4(0, 1, 0, 0));
                 float boxSphere1 = BoxSphere(position);
@@ -119,8 +117,7 @@
                     if (distance < 0.01) { // We have hit something
                         // Shading
                         float3 normal = getNormal(position);
-                        float shading = Shading(position, normal)
-                            ;
+                        float shading = Shading(position, normal);
                         result = fixed4(_mainColor.rgb * shading, 1);
                         break;
                     }

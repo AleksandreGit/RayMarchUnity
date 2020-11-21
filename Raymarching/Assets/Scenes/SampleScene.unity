@@ -206,13 +206,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 705507993}
-  m_LocalRotation: {x: 0.33054417, y: -0.24319297, z: 0.088569015, w: 0.9076086}
+  m_LocalRotation: {x: 0.35305136, y: -0.1636769, z: 0.07079777, w: 0.9184511}
   m_LocalPosition: {x: 79.5, y: 4.8, z: 65.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 40.022003, y: -30.000002, z: 0}
+  m_LocalEulerAnglesHint: {x: 42.198, y: -19.777, z: 1.12}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -310,13 +310,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _shader: {fileID: 4800000, guid: d8c49d231a081034f8af5681376d785e, type: 3}
+  _maxDistance: 100
   _directionnalLight: {fileID: 705507995}
-  _maxDistance: 12.6
-  _mainColor: {r: 0.98039216, g: 0.9468286, b: 0.29019615, a: 0}
-  _sphere1: {x: 0, y: 0, z: 0, w: 2.41}
-  _box1: {x: 0, y: 0, z: 0, w: 2.1}
-  _modInterval: {x: 4, y: 4, z: 4}
-  _box1Round: 0
-  _boxSphereSmooth: 0
-  _sphere2: {x: 0, y: 0, z: 0, w: 0}
-  _sphereIntersectSmooth: 0
+  _lightColor: {r: 0.9773945, g: 1, b: 0.11792451, a: 0}
+  _lightIntensity: 1
+  _shadowIntensity: 0.4
+  _shadowDist: {x: 0.1, y: 11.14}
+  _mainColor: {r: 0.9433962, g: 0.91947246, b: 0.43164828, a: 0}
+  _sphere1: {x: 0, y: 2.5, z: 0, w: 2.9}
+  _box1: {x: 0, y: 2.35, z: 0, w: 2.6}
+  _box1Round: 0.1
+  _boxSphereSmooth: 1.337
+  _sphere2: {x: 0, y: 2.66, z: 0, w: 3.28}
+  _sphereIntersectSmooth: 0.05

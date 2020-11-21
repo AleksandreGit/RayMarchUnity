@@ -45,14 +45,13 @@ public class RaymarchCamera : MonoBehaviour
 
     [Header("Shading")]
     public float _shadowIntensity;
-    public Vector2 _shadowDistance;
+    public Vector2 _shadowDist;
 
 
     [Header("Signed Distance Field")]
     public Color _mainColor;
     public Vector4 _sphere1;
     public Vector4 _box1;
-    public Vector3 _modInterval;
     public float _box1Round;
     public float _boxSphereSmooth;
     public Vector4 _sphere2;
@@ -84,12 +83,11 @@ public class RaymarchCamera : MonoBehaviour
         _rayMarchMaterial.SetVector("_sphere1", _sphere1);
         _rayMarchMaterial.SetVector("_sphere2", _sphere2);
         _rayMarchMaterial.SetVector("_box1", _box1);
-        _rayMarchMaterial.SetVector("_modInterval", _modInterval);
         _rayMarchMaterial.SetColor("_mainColor", _mainColor);
         _rayMarchMaterial.SetColor("_lightColor", _lightColor);
         _rayMarchMaterial.SetFloat("_lightIntensity", _lightIntensity);
         _rayMarchMaterial.SetFloat("_shadowIntensity", _shadowIntensity);
-        _rayMarchMaterial.SetVector("_shadowDistance", _shadowDistance);
+        _rayMarchMaterial.SetVector("_shadowDist", _shadowDist);
 
 
 
